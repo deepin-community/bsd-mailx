@@ -1,0 +1,143 @@
+From: Robert Luberda <robert@debian.org>
+Date: Sat, 15 Aug 2020 00:13:47 +0200
+Subject: Fix FTBFS with gcc-10
+
+Mark all glob.h variables as extern and provide glob.c
+to fix link failure caused by gcc-10 switching from -fcommon
+to -fno-common by default.
+
+Bugs-Debian: https://bugs.debian.org/957056
+---
+ Makefile |  2 +-
+ glob.c   |  3 +++
+ glob.h   | 84 +++++++++++++++++++++++++++++++++-------------------------------
+ 3 files changed, 48 insertions(+), 41 deletions(-)
+ create mode 100644 glob.c
+
+diff --git a/Makefile b/Makefile
+index 260c8cc..7157d54 100644
+--- a/Makefile
++++ b/Makefile
+@@ -6,7 +6,7 @@ CC ?=	gcc
+ CFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DDEBIAN -g -Wall
+ 
+ SRCS=	version.c aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c \
+-	edit.c fio.c getname.c head.c v7.local.c lex.c list.c main.c names.c \
++	edit.c fio.c getname.c glob.c head.c v7.local.c lex.c list.c main.c names.c \
+ 	popen.c quit.c send.c strings.c temp.c tty.c vars.c
+ 
+ OBJS=$(SRCS:%.c=%.o)
+diff --git a/glob.c b/glob.c
+new file mode 100644
+index 0000000..13e6a2e
+--- /dev/null
++++ b/glob.c
+@@ -0,0 +1,3 @@
++#define DEBIAN_EXTERN
++#include "def.h"
++#include "glob.h"
+diff --git a/glob.h b/glob.h
+index 27ea07f..8426fa4 100644
+--- a/glob.h
++++ b/glob.h
+@@ -37,48 +37,52 @@
+  * A bunch of global variable declarations lie herein.
+  * def.h must be included first.
+  */
+-int	msgCount;			/* Count of messages read in */
+-int	rcvmode;			/* True if receiving mail */
+-int	sawcom;				/* Set after first command */
+-int	senderr;			/* An error while checking */
+-int	edit;				/* Indicates editing a file */
+-int	readonly;			/* Will be unable to rewrite file */
+-int	noreset;			/* String resets suspended */
+-int	sourcing;			/* Currently reading variant file */
+-int	loading;			/* Loading user definitions */
+-int	cond;				/* Current state of conditional exc. */
+-FILE	*itf;				/* Input temp file buffer */
+-FILE	*otf;				/* Output temp file buffer */
+-int	image;				/* File descriptor for image of msg */
+-FILE	*input;				/* Current command input file */
+-char	mailname[PATHSIZE];		/* Name of current file */
+-char	prevfile[PATHSIZE];		/* Name of previous file */
+-char	*homedir;			/* Path name of home directory */
+-char	*myname;			/* My login name */
+-off_t	mailsize;			/* Size of system mailbox */
+-int	lexnumber;			/* Number of TNUMBER from scan() */
+-char	lexstring[STRINGLEN];		/* String from TSTRING, scan() */
+-int	regretp;			/* Pointer to TOS of regret tokens */
+-int	regretstack[REGDEP];		/* Stack of regretted tokens */
+-char	*string_stack[REGDEP];		/* Stack of regretted strings */
+-int	numberstack[REGDEP];		/* Stack of regretted numbers */
+-struct	message	*dot;			/* Pointer to current message */
+-struct	message	*message;		/* The actual message structure */
+-struct	var	*variables[HSHSIZE];	/* Pointer to active var list */
+-struct	grouphead	*groups[HSHSIZE];/* Pointer to active groups */
+-struct	ignoretab	ignore[2];	/* ignored and retained fields
++#ifndef DEBIAN_EXTERN
++#define DEBIAN_EXTERN extern
++#endif
++
++DEBIAN_EXTERN int	msgCount;			/* Count of messages read in */
++DEBIAN_EXTERN int	rcvmode;			/* True if receiving mail */
++DEBIAN_EXTERN int	sawcom;				/* Set after first command */
++DEBIAN_EXTERN int	senderr;			/* An error while checking */
++DEBIAN_EXTERN int	edit;				/* Indicates editing a file */
++DEBIAN_EXTERN int	readonly;			/* Will be unable to rewrite file */
++DEBIAN_EXTERN int	noreset;			/* String resets suspended */
++DEBIAN_EXTERN int	sourcing;			/* Currently reading variant file */
++DEBIAN_EXTERN int	loading;			/* Loading user definitions */
++DEBIAN_EXTERN int	cond;				/* Current state of conditional exc. */
++DEBIAN_EXTERN FILE	*itf;				/* Input temp file buffer */
++DEBIAN_EXTERN FILE	*otf;				/* Output temp file buffer */
++DEBIAN_EXTERN int	image;				/* File descriptor for image of msg */
++DEBIAN_EXTERN FILE	*input;				/* Current command input file */
++DEBIAN_EXTERN char	mailname[PATHSIZE];		/* Name of current file */
++DEBIAN_EXTERN char	prevfile[PATHSIZE];		/* Name of previous file */
++DEBIAN_EXTERN char	*homedir;			/* Path name of home directory */
++DEBIAN_EXTERN char	*myname;			/* My login name */
++DEBIAN_EXTERN off_t	mailsize;			/* Size of system mailbox */
++DEBIAN_EXTERN int	lexnumber;			/* Number of TNUMBER from scan() */
++DEBIAN_EXTERN char	lexstring[STRINGLEN];		/* String from TSTRING, scan() */
++DEBIAN_EXTERN int	regretp;			/* Pointer to TOS of regret tokens */
++DEBIAN_EXTERN int	regretstack[REGDEP];		/* Stack of regretted tokens */
++DEBIAN_EXTERN char	*string_stack[REGDEP];		/* Stack of regretted strings */
++DEBIAN_EXTERN int	numberstack[REGDEP];		/* Stack of regretted numbers */
++DEBIAN_EXTERN struct	message	*dot;			/* Pointer to current message */
++DEBIAN_EXTERN struct	message	*message;		/* The actual message structure */
++DEBIAN_EXTERN struct	var	*variables[HSHSIZE];	/* Pointer to active var list */
++DEBIAN_EXTERN struct	grouphead	*groups[HSHSIZE];/* Pointer to active groups */
++DEBIAN_EXTERN struct	ignoretab	ignore[2];	/* ignored and retained fields
+ 					   0 is ignore, 1 is retain */
+-struct	ignoretab	saveignore[2];	/* ignored and retained fields
++DEBIAN_EXTERN struct	ignoretab	saveignore[2];	/* ignored and retained fields
+ 					   on save to folder */
+-struct	ignoretab	ignoreall[2];	/* special, ignore all headers */
+-char	**altnames;			/* List of alternate names for user */
+-int	debug;				/* Debug flag set */
+-int	screenwidth;			/* Screen width, or best guess */
+-int	screenheight;			/* Screen height, or best guess,
++DEBIAN_EXTERN struct	ignoretab	ignoreall[2];	/* special, ignore all headers */
++DEBIAN_EXTERN char	**altnames;			/* List of alternate names for user */
++DEBIAN_EXTERN int	debug;				/* Debug flag set */
++DEBIAN_EXTERN int	screenwidth;			/* Screen width, or best guess */
++DEBIAN_EXTERN int	screenheight;			/* Screen height, or best guess,
+ 					   for "header" command */
+-int	realscreenheight;		/* the real screen height */
+-int	uflag;				/* Are we in -u mode? */
+-sigset_t intset;			/* Signal set that is just SIGINT */
++DEBIAN_EXTERN int	realscreenheight;		/* the real screen height */
++DEBIAN_EXTERN int	uflag;				/* Are we in -u mode? */
++DEBIAN_EXTERN sigset_t intset;			/* Signal set that is just SIGINT */
+ 
+ /*
+  * The pointers for the string allocation routines,
+@@ -87,7 +91,7 @@ sigset_t intset;			/* Signal set that is just SIGINT */
+  * twice as much, and so on.
+  */
+ #define	NSPACE	25			/* Total number of string spaces */
+-struct strings {
++DEBIAN_EXTERN struct strings {
+ 	char	*s_topFree;		/* Beginning of this area */
+ 	char	*s_nextFree;		/* Next alloctable place here */
+ 	unsigned s_nleft;		/* Number of bytes left here */
